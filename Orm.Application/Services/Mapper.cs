@@ -10,6 +10,7 @@ namespace Orm.Application.Services
             return new OrderItemDto
             {
                 OrderItemID = orderItem.OrderItemID,
+                OrderID = orderItem.OrderID,
                 ProductId = orderItem.ProductId,
                 Quantity = orderItem.Quantity,
                 Price = orderItem.Price

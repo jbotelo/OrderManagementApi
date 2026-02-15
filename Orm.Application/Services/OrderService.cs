@@ -15,11 +15,12 @@ namespace Orm.Application.Services
             this._mapper = mapper;
         }
 
-        public async Task<OrderDto> CreateOrder(CreateOrderDto createOrderDto)
+        public async Task<OrderDto> CreateOrderAsync(CreateOrderDto createOrderDto)
         {
             var order = new Order
             {
-                CreateDate = createOrderDto.CreateDate,
+                CreateDate = DateTime.UtcNow,
+                CustomerName = createOrderDto.CustomerName,
                 OrderItems = createOrderDto.OrderItems.Select(oi => new OrderItem
                 {
                     ProductId = oi.ProductId,
@@ -33,31 +34,30 @@ namespace Orm.Application.Services
             return _mapper.MapToDto(o);
         }
 
-        public async Task<OrderDto> UpdateOrder(UpdateOrderDto updateOrderDto)
+        public async Task<OrderDto> UpdateOrderAsync(UpdateOrderDto updateOrderDto)
         {
             var order = new Order
             {
                 OrderID = updateOrderDto.OrderID,
-                CreateDate = updateOrderDto.CreateDate,
                 OrderItems = updateOrderDto.OrderItems.Select(oi => new OrderItem
                 {
                     ProductId = oi.ProductId,
                     Quantity = oi.Quantity,
                     Price = oi.Price
-                }).ToList()
+                }).ToList(),
             };
             var o = await _orderRepository.UpdateAsync(order);
 
             return _mapper.MapToDto(o);
         }
 
-        public async Task<OrderDto> GetOrderById(long id)
+        public async Task<OrderDto> GetOrderByIdAsync(long id)
         {
             var o = await _orderRepository.GetByIdAsync(id);
             return _mapper.MapToDto(o);
         }
 
-        public async Task DeleteOrder(long id)
+        public async Task DeleteOrderAsync(long id)
         {
             await _orderRepository.DeleteAsync(id);
         }

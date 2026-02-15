@@ -1,6 +1,6 @@
 ﻿namespace Orm.Application.Dtos
 {
-    public class CreateOrderItemDto
+    public class UpdateOrderItemDto
     {
         public long ProductId { get; set; }
         public int Quantity { get; set; }

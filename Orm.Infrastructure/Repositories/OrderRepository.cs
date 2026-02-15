@@ -23,11 +23,13 @@ namespace Orm.Infrastructure.Repositories
 
         public async Task DeleteAsync(long id)
         {
-            var existentOrder = await _context.Orders.AsNoTracking().SingleOrDefaultAsync(o => o.OrderID == id);
+            var existentOrder = await _context.Orders.AsNoTracking().Include(o => o.OrderItems).SingleOrDefaultAsync(o => o.OrderID == id);
             if (existentOrder == null)
             {
                 throw new InvalidOperationException("Order not found for deletion");
             }
+
+            existentOrder.OrderItems.ForEach(item => _context.Entry(item).State = EntityState.Deleted);
 
             _context.Entry(existentOrder).State = EntityState.Deleted;
             await _context.SaveChangesAsync();
@@ -41,15 +43,42 @@ namespace Orm.Infrastructure.Repositories
 
         public async Task<Order> UpdateAsync(Order order)
         {
-            var existentOrder = await _context.Orders.AsNoTracking().SingleOrDefaultAsync(o => o.OrderID == order.OrderID);
+            var existentOrder = await _context.Orders.AsNoTracking().Include(o => o.OrderItems).SingleOrDefaultAsync(o => o.OrderID == order.OrderID);
             if (existentOrder == null)
             {
                 throw new InvalidOperationException("Order not found for update");
             }
 
-            _context.Entry(order).State = EntityState.Modified;
+            existentOrder.OrderItems.ForEach(existentItem =>
+            {
+                var incomeItem = order.OrderItems.SingleOrDefault(i => i.ProductId == existentItem.ProductId);
+                if (incomeItem != null)
+                {
+                    existentItem.Quantity = incomeItem.Quantity;
+                    existentItem.Price = incomeItem.Price;
+                    _context.Entry(existentItem).State = EntityState.Modified;
+                }
+                else
+                { 
+                    _context.Entry(existentItem).State = EntityState.Deleted;
+                }
+            });
+
+            foreach (var newInboundItem in order.OrderItems.Where(oi => existentOrder.OrderItems.All(ei => ei.ProductId != oi.ProductId)))
+            {
+                var newItem = new OrderItem
+                {
+                    ProductId = newInboundItem.ProductId,
+                    Quantity = newInboundItem.Quantity,
+                    Price = newInboundItem.Price,
+                    OrderID = order.OrderID
+                };
+                await _context.OrderItems.AddAsync(newItem);
+            }
+
+            _context.Entry(existentOrder).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            return order;
+            return existentOrder;
         }
     }
 }
