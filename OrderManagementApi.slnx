@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Orm.Api/Orm.Api.csproj" />
+  <Project Path="Orm.Application/Orm.Application.csproj" />
+  <Project Path="Orm.Domain/Orm.Domain.csproj" />
+  <Project Path="Orm.Infrastructure/Orm.Infrastructure.csproj" Id="7f1a1c6d-614e-46df-9b52-34ad8968b94c" />
+</Solution>
