@@ -3,4 +3,7 @@
   <Project Path="Orm.Application/Orm.Application.csproj" />
   <Project Path="Orm.Domain/Orm.Domain.csproj" />
   <Project Path="Orm.Infrastructure/Orm.Infrastructure.csproj" Id="7f1a1c6d-614e-46df-9b52-34ad8968b94c" />
+  <Project Path="Orm.Application.Tests/Orm.Application.Tests.csproj" />
+  <Project Path="Orm.Infrastructure.Tests/Orm.Infrastructure.Tests.csproj" />
+  <Project Path="Orm.Api.Tests/Orm.Api.Tests.csproj" />
 </Solution>
