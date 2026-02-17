@@ -13,6 +13,9 @@
 *.yaml   text eol=lf
 *.md     text eol=lf
 
+# GitHub Linguist overrides
+*.http linguist-vendored
+
 # Binary files should not be modified
 *.png  binary
 *.jpg  binary
