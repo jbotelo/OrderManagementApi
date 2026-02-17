@@ -6,6 +6,7 @@ namespace Orm.Api.Controllers
 {
     [ApiController]
     [Route("api/v1/order")]
+    [Produces("application/json")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -17,6 +18,8 @@ namespace Orm.Api.Controllers
 
         [HttpGet(Name = "GetOrder")]
         [Route("get-order/{id:long}")]
+        [ProducesResponseType<OrderDto>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetOrderAsync(long id)
         {
             var orderDto = await _orderService.GetOrderByIdAsync(id);
@@ -25,6 +28,8 @@ namespace Orm.Api.Controllers
 
         [HttpPost(Name = "CreateOrder")]
         [Route("create-order")]
+        [ProducesResponseType<OrderDto>(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateOrderAsync(CreateOrderDto createOrderDto)
         {
             var orderDto = await _orderService.CreateOrderAsync(createOrderDto);
@@ -33,6 +38,8 @@ namespace Orm.Api.Controllers
 
         [HttpPut(Name = "UpdateOrder")]
         [Route("update-order/{id:long}")]
+        [ProducesResponseType<OrderDto>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateOrderAsync(UpdateOrderDto updateOrderDto, long id)
         {
             if (updateOrderDto?.OrderID != id || id <= 0)
@@ -45,6 +52,8 @@ namespace Orm.Api.Controllers
 
         [HttpDelete(Name = "DeleteOrder")]
         [Route("delete-order/{id:long}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteOrderAsync(long id)
         {
             await _orderService.DeleteOrderAsync(id);
