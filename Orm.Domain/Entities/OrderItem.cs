@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Orm.Domain.Entities
+﻿namespace Orm.Domain.Entities
 {
     public class OrderItem
     {

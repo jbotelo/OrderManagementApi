@@ -35,7 +35,7 @@ namespace Orm.Application.Services
                 OrderID = order.OrderID,
                 CustomerName = order.CustomerName,
                 CreateDate = order.CreateDate,
-                OrderItems = order.OrderItems != null ? order.OrderItems.ConvertAll(MapToDto) : new List<OrderItemDto>()
+                OrderItems = order.OrderItems.ConvertAll(MapToDto)
             };
         }
 
@@ -46,7 +46,7 @@ namespace Orm.Application.Services
                 OrderID = orderDto.OrderID,
                 CustomerName = orderDto.CustomerName,
                 CreateDate = orderDto.CreateDate,
-                OrderItems = orderDto.OrderItems != null ? orderDto.OrderItems.ConvertAll(MapToEntity) : new List<OrderItem>()
+                OrderItems = orderDto.OrderItems.ConvertAll(MapToEntity)
             };
         }
     }

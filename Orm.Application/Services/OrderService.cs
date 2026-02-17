@@ -51,9 +51,10 @@ namespace Orm.Application.Services
             return _mapper.MapToDto(o);
         }
 
-        public async Task<OrderDto> GetOrderByIdAsync(long id)
+        public async Task<OrderDto?> GetOrderByIdAsync(long id)
         {
             var o = await _orderRepository.GetByIdAsync(id);
+            if (o == null) return null;
             return _mapper.MapToDto(o);
         }
 

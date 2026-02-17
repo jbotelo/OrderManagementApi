@@ -6,7 +6,7 @@ namespace Orm.Application.Services
     {
         Task<OrderDto> CreateOrderAsync(CreateOrderDto createOrderDto);
         Task DeleteOrderAsync(long id);
-        Task<OrderDto> GetOrderByIdAsync(long id);
+        Task<OrderDto?> GetOrderByIdAsync(long id);
         Task<OrderDto> UpdateOrderAsync(UpdateOrderDto updateOrderDto);
     }
 }

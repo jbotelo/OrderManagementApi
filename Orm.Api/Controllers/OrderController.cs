@@ -16,18 +16,17 @@ namespace Orm.Api.Controllers
             this._orderService = orderService;
         }
 
-        [HttpGet(Name = "GetOrder")]
-        [Route("get-order/{id:long}")]
+        [HttpGet("get-order/{id:long}", Name = "GetOrder")]
         [ProducesResponseType<OrderDto>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetOrderAsync(long id)
         {
             var orderDto = await _orderService.GetOrderByIdAsync(id);
+            if (orderDto == null) return NotFound();
             return Ok(orderDto);
         }
 
-        [HttpPost(Name = "CreateOrder")]
-        [Route("create-order")]
+        [HttpPost("create-order", Name = "CreateOrder")]
         [ProducesResponseType<OrderDto>(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateOrderAsync(CreateOrderDto createOrderDto)
@@ -36,8 +35,7 @@ namespace Orm.Api.Controllers
             return CreatedAtAction("GetOrder", new { id = orderDto.OrderID }, orderDto);
         }
 
-        [HttpPut(Name = "UpdateOrder")]
-        [Route("update-order/{id:long}")]
+        [HttpPut("update-order/{id:long}", Name = "UpdateOrder")]
         [ProducesResponseType<OrderDto>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateOrderAsync(UpdateOrderDto updateOrderDto, long id)
@@ -50,8 +48,7 @@ namespace Orm.Api.Controllers
             return Ok(orderDto);
         }
 
-        [HttpDelete(Name = "DeleteOrder")]
-        [Route("delete-order/{id:long}")]
+        [HttpDelete("delete-order/{id:long}", Name = "DeleteOrder")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteOrderAsync(long id)
