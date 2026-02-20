@@ -1,6 +1,10 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Orm.Application.Dtos;
-using Orm.Application.Services;
+using Orm.Application.Orders.Commands.CreateOrder;
+using Orm.Application.Orders.Commands.DeleteOrder;
+using Orm.Application.Orders.Commands.UpdateOrder;
+using Orm.Application.Orders.Queries.GetOrderById;
 
 namespace Orm.Api.Controllers
 {
@@ -9,11 +13,11 @@ namespace Orm.Api.Controllers
     [Produces("application/json")]
     public class OrderController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly IMediator _mediator;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(IMediator mediator)
         {
-            this._orderService = orderService;
+            this._mediator = mediator;
         }
 
         [HttpGet("get-order/{id:long}", Name = "GetOrder")]
@@ -21,7 +25,7 @@ namespace Orm.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetOrderAsync(long id)
         {
-            var orderDto = await _orderService.GetOrderByIdAsync(id);
+            var orderDto = await _mediator.Send(new GetOrderByIdQuery(id));
             if (orderDto == null) return NotFound();
             return Ok(orderDto);
         }
@@ -31,7 +35,7 @@ namespace Orm.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateOrderAsync(CreateOrderDto createOrderDto)
         {
-            var orderDto = await _orderService.CreateOrderAsync(createOrderDto);
+            var orderDto = await _mediator.Send(new CreateOrderCommand(createOrderDto));
             return CreatedAtAction("GetOrder", new { id = orderDto.OrderID }, orderDto);
         }
 
@@ -44,7 +48,7 @@ namespace Orm.Api.Controllers
             {
                 return BadRequest();
             }
-            var orderDto = await _orderService.UpdateOrderAsync(updateOrderDto);
+            var orderDto = await _mediator.Send(new UpdateOrderCommand(updateOrderDto));
             return Ok(orderDto);
         }
 
@@ -53,7 +57,7 @@ namespace Orm.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteOrderAsync(long id)
         {
-            await _orderService.DeleteOrderAsync(id);
+            await _mediator.Send(new DeleteOrderCommand(id));
             return Ok();
         }
 

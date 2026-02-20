@@ -29,7 +29,9 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddDbContext<AppDbContext>(optBuilder =>
     optBuilder.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnectionString"))
 );
-builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblyContaining<Orm.Application.Services.IMapper>()
+);
 builder.Services.AddScoped<IMapper, Mapper>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
