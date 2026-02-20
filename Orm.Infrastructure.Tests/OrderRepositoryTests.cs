@@ -18,6 +18,7 @@ public class OrderRepositoryTests
     [Fact]
     public async Task CreateAsync_PersistsOrderWithItems()
     {
+        // Arrange
         using var context = CreateContext(nameof(CreateAsync_PersistsOrderWithItems));
         var repo = new OrderRepository(context);
 
@@ -32,8 +33,10 @@ public class OrderRepositoryTests
             ]
         };
 
+        // Act
         var result = await repo.CreateAsync(order);
 
+        // Assert
         Assert.True(result.OrderID > 0);
         Assert.Equal(2, result.OrderItems.Count);
 
@@ -45,6 +48,7 @@ public class OrderRepositoryTests
     [Fact]
     public async Task GetByIdAsync_ReturnsOrderWithItems()
     {
+        // Arrange
         using var context = CreateContext(nameof(GetByIdAsync_ReturnsOrderWithItems));
         var order = new Order
         {
@@ -56,8 +60,11 @@ public class OrderRepositoryTests
         await context.SaveChangesAsync();
 
         var repo = new OrderRepository(context);
+
+        // Act
         var result = await repo.GetByIdAsync(order.OrderID);
 
+        // Assert
         Assert.NotNull(result);
         Assert.Equal("Bob", result.CustomerName);
         Assert.Single(result.OrderItems);
@@ -67,17 +74,21 @@ public class OrderRepositoryTests
     [Fact]
     public async Task GetByIdAsync_ReturnsNull_ForMissingId()
     {
+        // Arrange
         using var context = CreateContext(nameof(GetByIdAsync_ReturnsNull_ForMissingId));
         var repo = new OrderRepository(context);
 
+        // Act
         var result = await repo.GetByIdAsync(999);
 
+        // Assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task UpdateAsync_ModifiesExistingItems()
     {
+        // Arrange
         using var context = CreateContext(nameof(UpdateAsync_ModifiesExistingItems));
         var order = new Order
         {
@@ -96,8 +107,10 @@ public class OrderRepositoryTests
             OrderItems = [new OrderItem { ProductId = 10, Quantity = 5, Price = 25m }]
         };
 
+        // Act
         var result = await repo.UpdateAsync(updateOrder);
 
+        // Assert
         context.ChangeTracker.Clear();
         var persisted = await context.Orders.Include(o => o.OrderItems).SingleAsync();
         Assert.Single(persisted.OrderItems);
@@ -108,6 +121,7 @@ public class OrderRepositoryTests
     [Fact]
     public async Task UpdateAsync_DeletesRemovedItems_AddsNewItems()
     {
+        // Arrange
         using var context = CreateContext(nameof(UpdateAsync_DeletesRemovedItems_AddsNewItems));
         var order = new Order
         {
@@ -135,9 +149,11 @@ public class OrderRepositoryTests
             ]
         };
 
+        // Act
         await repo.UpdateAsync(updateOrder);
-        context.ChangeTracker.Clear();
 
+        // Assert
+        context.ChangeTracker.Clear();
         var persisted = await context.Orders.Include(o => o.OrderItems).SingleAsync();
         Assert.Equal(2, persisted.OrderItems.Count);
         Assert.DoesNotContain(persisted.OrderItems, i => i.ProductId == 1);
@@ -148,17 +164,19 @@ public class OrderRepositoryTests
     [Fact]
     public async Task UpdateAsync_ThrowsInvalidOperationException_ForNonExistentOrder()
     {
+        // Arrange
         using var context = CreateContext(nameof(UpdateAsync_ThrowsInvalidOperationException_ForNonExistentOrder));
         var repo = new OrderRepository(context);
-
         var order = new Order { OrderID = 999, OrderItems = [] };
 
+        // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => repo.UpdateAsync(order));
     }
 
     [Fact]
     public async Task DeleteAsync_RemovesOrderAndItems()
     {
+        // Arrange
         using var context = CreateContext(nameof(DeleteAsync_RemovesOrderAndItems));
         var order = new Order
         {
@@ -171,8 +189,11 @@ public class OrderRepositoryTests
         context.ChangeTracker.Clear();
 
         var repo = new OrderRepository(context);
+
+        // Act
         await repo.DeleteAsync(order.OrderID);
 
+        // Assert
         Assert.Empty(await context.Orders.ToListAsync());
         Assert.Empty(await context.OrderItems.ToListAsync());
     }
@@ -180,9 +201,11 @@ public class OrderRepositoryTests
     [Fact]
     public async Task DeleteAsync_ThrowsInvalidOperationException_ForNonExistentOrder()
     {
+        // Arrange
         using var context = CreateContext(nameof(DeleteAsync_ThrowsInvalidOperationException_ForNonExistentOrder));
         var repo = new OrderRepository(context);
 
+        // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => repo.DeleteAsync(999));
     }
 }

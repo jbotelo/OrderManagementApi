@@ -1,25 +1,30 @@
 using Moq;
 using Orm.Application.Dtos;
+using Orm.Application.Orders.Commands.CreateOrder;
+using Orm.Application.Orders.Commands.DeleteOrder;
+using Orm.Application.Orders.Commands.UpdateOrder;
+using Orm.Application.Orders.Queries.GetOrderById;
 using Orm.Application.Services;
 using Orm.Domain.Entities;
 using Orm.Domain.Interfaces;
 
 namespace Orm.Application.Tests;
 
-public class OrderServiceTests
+public class CreateOrderCommandHandlerTests
 {
     private readonly Mock<IOrderRepository> _repoMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
-    private readonly OrderService _service;
+    private readonly CreateOrderCommandHandler _handler;
 
-    public OrderServiceTests()
+    public CreateOrderCommandHandlerTests()
     {
-        _service = new OrderService(_repoMock.Object, _mapperMock.Object);
+        _handler = new CreateOrderCommandHandler(_repoMock.Object, _mapperMock.Object);
     }
 
     [Fact]
-    public async Task CreateOrderAsync_BuildsEntityAndReturnsMappedDto()
+    public async Task Handle_BuildsEntityAndReturnsMappedDto()
     {
+        // Arrange
         var createDto = new CreateOrderDto
         {
             CustomerName = "Alice",
@@ -44,39 +49,72 @@ public class OrderServiceTests
             .Setup(m => m.MapToDto(It.IsAny<Order>()))
             .Returns(expectedDto);
 
-        var result = await _service.CreateOrderAsync(createDto);
+        // Act
+        var result = await _handler.Handle(new CreateOrderCommand(createDto), CancellationToken.None);
 
+        // Assert
         Assert.Equal(expectedDto, result);
         _repoMock.Verify(r => r.CreateAsync(It.IsAny<Order>()), Times.Once);
     }
+}
+
+public class GetOrderByIdQueryHandlerTests
+{
+    private readonly Mock<IOrderRepository> _repoMock = new();
+    private readonly Mock<IMapper> _mapperMock = new();
+    private readonly GetOrderByIdQueryHandler _handler;
+
+    public GetOrderByIdQueryHandlerTests()
+    {
+        _handler = new GetOrderByIdQueryHandler(_repoMock.Object, _mapperMock.Object);
+    }
 
     [Fact]
-    public async Task GetOrderByIdAsync_ReturnsNull_WhenRepoReturnsNull()
+    public async Task Handle_ReturnsNull_WhenRepoReturnsNull()
     {
+        // Arrange
         _repoMock.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((Order?)null);
 
-        var result = await _service.GetOrderByIdAsync(999);
+        // Act
+        var result = await _handler.Handle(new GetOrderByIdQuery(999), CancellationToken.None);
 
+        // Assert
         Assert.Null(result);
     }
 
     [Fact]
-    public async Task GetOrderByIdAsync_ReturnsMappedDto_WhenOrderExists()
+    public async Task Handle_ReturnsMappedDto_WhenOrderExists()
     {
+        // Arrange
         var order = new Order { OrderID = 1, CustomerName = "Bob", OrderItems = [] };
         var dto = new OrderDto { OrderID = 1, CustomerName = "Bob" };
 
         _repoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(order);
         _mapperMock.Setup(m => m.MapToDto(order)).Returns(dto);
 
-        var result = await _service.GetOrderByIdAsync(1);
+        // Act
+        var result = await _handler.Handle(new GetOrderByIdQuery(1), CancellationToken.None);
 
+        // Assert
         Assert.Equal(dto, result);
+    }
+}
+
+public class UpdateOrderCommandHandlerTests
+{
+    private readonly Mock<IOrderRepository> _repoMock = new();
+    private readonly Mock<IMapper> _mapperMock = new();
+    private readonly UpdateOrderCommandHandler _handler;
+
+    public UpdateOrderCommandHandlerTests()
+    {
+        _handler = new UpdateOrderCommandHandler(_repoMock.Object, _mapperMock.Object);
     }
 
     [Fact]
-    public async Task UpdateOrderAsync_BuildsEntityAndReturnsMappedDto()
+    public async Task Handle_BuildsEntityAndReturnsMappedDto()
     {
+        // Arrange
         var updateDto = new UpdateOrderDto
         {
             OrderID = 5,
@@ -100,19 +138,35 @@ public class OrderServiceTests
             .Setup(m => m.MapToDto(It.IsAny<Order>()))
             .Returns(expectedDto);
 
-        var result = await _service.UpdateOrderAsync(updateDto);
+        // Act
+        var result = await _handler.Handle(new UpdateOrderCommand(updateDto), CancellationToken.None);
 
+        // Assert
         Assert.Equal(expectedDto, result);
         _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Order>()), Times.Once);
     }
+}
+
+public class DeleteOrderCommandHandlerTests
+{
+    private readonly Mock<IOrderRepository> _repoMock = new();
+    private readonly DeleteOrderCommandHandler _handler;
+
+    public DeleteOrderCommandHandlerTests()
+    {
+        _handler = new DeleteOrderCommandHandler(_repoMock.Object);
+    }
 
     [Fact]
-    public async Task DeleteOrderAsync_DelegatesToRepository()
+    public async Task Handle_DelegatesToRepository()
     {
+        // Arrange
         _repoMock.Setup(r => r.DeleteAsync(42)).Returns(Task.CompletedTask);
 
-        await _service.DeleteOrderAsync(42);
+        // Act
+        await _handler.Handle(new DeleteOrderCommand(42), CancellationToken.None);
 
+        // Assert
         _repoMock.Verify(r => r.DeleteAsync(42), Times.Once);
     }
 }

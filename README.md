@@ -9,7 +9,7 @@ The solution is organized into four layers:
 ```
 OrderManagementApi/
 ├── Orm.Api                  # Presentation layer (Controllers, Program.cs)
-├── Orm.Application          # Application layer (Services, DTOs, Mapper)
+├── Orm.Application          # Application layer (CQRS Commands/Queries, DTOs, Mapper)
 ├── Orm.Domain               # Domain layer (Entities, Repository interfaces)
 ├── Orm.Infrastructure       # Infrastructure layer (EF Core DbContext, Repositories)
 ├── Orm.Application.Tests    # Unit tests for Application layer
@@ -18,13 +18,14 @@ OrderManagementApi/
 ```
 
 - **Orm.Domain** contains the core entities (`Order`, `OrderItem`) and repository interfaces. It has no dependencies on other layers.
-- **Orm.Application** defines DTOs, the `IMapper`/`Mapper` for entity-DTO mapping, and `IOrderService`/`OrderService` which orchestrates business operations. Depends only on `Orm.Domain`.
+- **Orm.Application** implements the **CQRS pattern** using **MediatR**. Commands (`CreateOrder`, `UpdateOrder`, `DeleteOrder`) and Queries (`GetOrderById`) are organized into dedicated folders, each with their own request and handler classes. Also contains DTOs and the `IMapper`/`Mapper` for entity-DTO mapping. Depends only on `Orm.Domain`.
 - **Orm.Infrastructure** implements data access with Entity Framework Core and SQL Server. Contains `AppDbContext` and `OrderRepository`. Depends on `Orm.Domain` and `Orm.Application`.
-- **Orm.Api** is the entry point. Contains the `OrderController` and dependency injection configuration. Depends on `Orm.Application` and `Orm.Infrastructure`.
+- **Orm.Api** is the entry point. The `OrderController` dispatches requests through `IMediator` rather than calling services directly. Depends on `Orm.Application` and `Orm.Infrastructure`.
 
 ## Tech Stack
 
 - **.NET 10** / ASP.NET Core
+- **MediatR** for CQRS and Mediator pattern
 - **Entity Framework Core 10** with SQL Server
 - **Scalar** for interactive API documentation
 - **xUnit** + **Moq** for testing
@@ -123,9 +124,9 @@ The test suite includes 25 tests across three projects:
 
 | Project | Type | What's Tested |
 |---------|------|---------------|
-| **Orm.Application.Tests** | Unit (Moq) | `Mapper` entity/DTO mapping, `OrderService` business logic |
+| **Orm.Application.Tests** | Unit (Moq) | `Mapper` entity/DTO mapping, CQRS command and query handlers |
 | **Orm.Infrastructure.Tests** | Integration (EF InMemory) | `OrderRepository` CRUD operations |
-| **Orm.Api.Tests** | Unit (Moq) | `OrderController` HTTP responses and status codes |
+| **Orm.Api.Tests** | Unit (Moq) | `OrderController` HTTP responses and status codes (mocking `IMediator`) |
 
 ## License
 

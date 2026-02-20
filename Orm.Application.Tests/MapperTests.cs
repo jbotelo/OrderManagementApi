@@ -11,6 +11,7 @@ public class MapperTests
     [Fact]
     public void MapToDto_Order_MapsAllProperties()
     {
+        // Arrange
         var order = new Order
         {
             OrderID = 1,
@@ -22,8 +23,10 @@ public class MapperTests
             ]
         };
 
+        // Act
         var dto = _mapper.MapToDto(order);
 
+        // Assert
         Assert.Equal(order.OrderID, dto.OrderID);
         Assert.Equal(order.CreateDate, dto.CreateDate);
         Assert.Equal(order.CustomerName, dto.CustomerName);
@@ -38,10 +41,13 @@ public class MapperTests
     [Fact]
     public void MapToDto_OrderItem_MapsAllProperties()
     {
+        // Arrange
         var item = new OrderItem { OrderItemID = 5, OrderID = 3, ProductId = 42, Quantity = 7, Price = 19.50m };
 
+        // Act
         var dto = _mapper.MapToDto(item);
 
+        // Assert
         Assert.Equal(5, dto.OrderItemID);
         Assert.Equal(3, dto.OrderID);
         Assert.Equal(42, dto.ProductId);
@@ -52,6 +58,7 @@ public class MapperTests
     [Fact]
     public void MapToEntity_OrderDto_MapsAllProperties()
     {
+        // Arrange
         var dto = new OrderDto
         {
             OrderID = 2,
@@ -63,8 +70,10 @@ public class MapperTests
             ]
         };
 
+        // Act
         var entity = _mapper.MapToEntity(dto);
 
+        // Assert
         Assert.Equal(dto.OrderID, entity.OrderID);
         Assert.Equal(dto.CreateDate, entity.CreateDate);
         Assert.Equal(dto.CustomerName, entity.CustomerName);
@@ -78,10 +87,13 @@ public class MapperTests
     [Fact]
     public void MapToEntity_OrderItemDto_MapsAllProperties()
     {
+        // Arrange
         var dto = new OrderItemDto { OrderItemID = 8, OrderID = 4, ProductId = 99, Quantity = 3, Price = 12.75m };
 
+        // Act
         var entity = _mapper.MapToEntity(dto);
 
+        // Assert
         Assert.Equal(8, entity.OrderItemID);
         Assert.Equal(99, entity.ProductId);
         Assert.Equal(3, entity.Quantity);
@@ -91,10 +103,13 @@ public class MapperTests
     [Fact]
     public void MapToDto_Order_WithEmptyItems_ReturnsEmptyList()
     {
+        // Arrange
         var order = new Order { OrderID = 1, CustomerName = "Test", OrderItems = [] };
 
+        // Act
         var dto = _mapper.MapToDto(order);
 
+        // Assert
         Assert.Empty(dto.OrderItems);
     }
 }
