@@ -1,8 +1,10 @@
+using MediatR;
 using Moq;
 using Orm.Application.Dtos;
 using Orm.Application.Orders.Commands.CreateOrder;
 using Orm.Application.Orders.Commands.DeleteOrder;
 using Orm.Application.Orders.Commands.UpdateOrder;
+using Orm.Application.Orders.Notifications;
 using Orm.Application.Orders.Queries.GetOrderById;
 using Orm.Application.Services;
 using Orm.Domain.Entities;
@@ -14,11 +16,12 @@ public class CreateOrderCommandHandlerTests
 {
     private readonly Mock<IOrderRepository> _repoMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IPublisher> _publisherMock = new();
     private readonly CreateOrderCommandHandler _handler;
 
     public CreateOrderCommandHandlerTests()
     {
-        _handler = new CreateOrderCommandHandler(_repoMock.Object, _mapperMock.Object);
+        _handler = new CreateOrderCommandHandler(_repoMock.Object, _mapperMock.Object, _publisherMock.Object);
     }
 
     [Fact]
@@ -55,6 +58,9 @@ public class CreateOrderCommandHandlerTests
         // Assert
         Assert.Equal(expectedDto, result);
         _repoMock.Verify(r => r.CreateAsync(It.IsAny<Order>()), Times.Once);
+        _publisherMock.Verify(p => p.Publish(
+            It.Is<OrderPersistedNotification>(n => n.Order.CustomerName == "Alice"),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }
 
@@ -104,11 +110,12 @@ public class UpdateOrderCommandHandlerTests
 {
     private readonly Mock<IOrderRepository> _repoMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IPublisher> _publisherMock = new();
     private readonly UpdateOrderCommandHandler _handler;
 
     public UpdateOrderCommandHandlerTests()
     {
-        _handler = new UpdateOrderCommandHandler(_repoMock.Object, _mapperMock.Object);
+        _handler = new UpdateOrderCommandHandler(_repoMock.Object, _mapperMock.Object, _publisherMock.Object);
     }
 
     [Fact]
@@ -144,6 +151,9 @@ public class UpdateOrderCommandHandlerTests
         // Assert
         Assert.Equal(expectedDto, result);
         _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Order>()), Times.Once);
+        _publisherMock.Verify(p => p.Publish(
+            It.Is<OrderPersistedNotification>(n => n.Order.OrderID == 5),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }
 

@@ -1,13 +1,17 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Orm.Application.Auth;
+using Orm.Application.Orders.Notifications;
 using Orm.Application.Services;
 using Orm.Domain.Entities;
 using Orm.Domain.Interfaces;
+using Orm.Infrastructure.Cosmos;
 using Orm.Infrastructure.DbContexts;
 using Orm.Infrastructure.Repositories;
 using Orm.Infrastructure.Services;
@@ -106,6 +110,24 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+// CosmosDB
+builder.Services.Configure<CosmosDbSettings>(
+    builder.Configuration.GetSection(CosmosDbSettings.SectionName));
+
+builder.Services.AddSingleton(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<CosmosDbSettings>>().Value;
+    return new CosmosClient(settings.ConnectionString, new CosmosClientOptions
+    {
+        SerializerOptions = new CosmosSerializationOptions
+        {
+            PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+        }
+    });
+});
+
+builder.Services.AddTransient<CosmosDbInitializer>();
+builder.Services.AddScoped<IOrderDocumentStore, CosmosOrderDocumentStore>();
 
 var app = builder.Build();
 
@@ -121,6 +143,13 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
+}
+
+// Initialize CosmosDB database and container
+using (var scope = app.Services.CreateScope())
+{
+    var cosmosInitializer = scope.ServiceProvider.GetRequiredService<CosmosDbInitializer>();
+    await cosmosInitializer.InitializeAsync();
 }
 
 // Configure the HTTP request pipeline.
