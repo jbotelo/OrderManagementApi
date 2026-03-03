@@ -1,5 +1,6 @@
 using MediatR;
 using Orm.Application.Dtos;
+using Orm.Application.Orders.Notifications;
 using Orm.Application.Services;
 using Orm.Domain.Entities;
 using Orm.Domain.Interfaces;
@@ -10,11 +11,13 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IMapper _mapper;
+    private readonly IPublisher _publisher;
 
-    public CreateOrderCommandHandler(IOrderRepository orderRepository, IMapper mapper)
+    public CreateOrderCommandHandler(IOrderRepository orderRepository, IMapper mapper, IPublisher publisher)
     {
         _orderRepository = orderRepository;
         _mapper = mapper;
+        _publisher = publisher;
     }
 
     public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -32,6 +35,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
         };
 
         var createdOrder = await _orderRepository.CreateAsync(order);
+        await _publisher.Publish(new OrderPersistedNotification(createdOrder), cancellationToken);
         return _mapper.MapToDto(createdOrder);
     }
 }

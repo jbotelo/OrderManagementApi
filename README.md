@@ -19,14 +19,15 @@ OrderManagementApi/
 
 - **Orm.Domain** contains the core entities (`Order`, `OrderItem`, `ApplicationUser`, `RefreshToken`) and repository interfaces. It has no dependencies on other layers.
 - **Orm.Application** implements the **CQRS pattern** using **MediatR**. Commands (`CreateOrder`, `UpdateOrder`, `DeleteOrder`, `Register`, `Login`, `RefreshToken`) and Queries (`GetOrderById`) are organized into dedicated folders, each with their own request and handler classes. Also contains DTOs, the `IMapper`/`Mapper` for entity-DTO mapping, `ITokenService`, and authorization policy constants. Depends only on `Orm.Domain`.
-- **Orm.Infrastructure** implements data access with Entity Framework Core and SQL Server. Contains `AppDbContext` (extending `IdentityDbContext`), `OrderRepository`, `RefreshTokenRepository`, and `TokenService` for JWT generation. Depends on `Orm.Domain` and `Orm.Application`.
+- **Orm.Infrastructure** implements data access with Entity Framework Core and SQL Server. Contains `AppDbContext` (extending `IdentityDbContext`), `OrderRepository`, `RefreshTokenRepository`, and `TokenService` for JWT generation. Also includes the **Azure Cosmos DB** integration for secondary order persistence (`CosmosOrderDocumentStore`, `CosmosDbInitializer`). Depends on `Orm.Domain` and `Orm.Application`.
 - **Orm.Api** is the entry point. The `OrderController` dispatches requests through `IMediator` rather than calling services directly. The `AuthController` handles registration, login, and token refresh. Depends on `Orm.Application` and `Orm.Infrastructure`.
 
 ## Tech Stack
 
 - **.NET 10** / ASP.NET Core
 - **MediatR** for CQRS and Mediator pattern
-- **Entity Framework Core 10** with SQL Server
+- **Entity Framework Core 10** with SQL Server (primary store)
+- **Azure Cosmos DB** SDK v3 for secondary order persistence
 - **ASP.NET Core Identity** for user management
 - **JWT Bearer Authentication** with refresh token rotation
 - **Scalar** for interactive API documentation
@@ -39,6 +40,7 @@ OrderManagementApi/
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - SQL Server (local or remote)
+- [Azure Cosmos DB Emulator](https://learn.microsoft.com/en-us/azure/cosmos-db/emulator) (for local development) or an Azure Cosmos DB account (for production)
 
 ### Configuration
 
@@ -48,6 +50,18 @@ Update the connection string in `Orm.Api/appsettings.Development.json`:
 {
   "ConnectionStrings": {
     "SqlConnectionString": "Server=YOUR_SERVER;Database=OrderManagementDb;Trusted_Connection=True;TrustServerCertificate=True;"
+  }
+}
+```
+
+The Cosmos DB emulator connection string is preconfigured in `appsettings.Development.json`. For production, set `CosmosDb:ConnectionString` to your Azure Cosmos DB account connection string:
+
+```json
+{
+  "CosmosDb": {
+    "ConnectionString": "AccountEndpoint=https://your-account.documents.azure.com:443/;AccountKey=your-key",
+    "DatabaseName": "OrderManagement",
+    "ContainerName": "Orders"
   }
 }
 ```
@@ -206,6 +220,15 @@ All order endpoints are under `/api/v1/order` and require authentication.
 
 The update logic matches items by `productId`: existing items are updated, missing items are removed, and new items are added.
 
+## Cosmos DB Sync
+
+When an order is successfully created or updated in SQL Server, a **MediatR notification** (`OrderPersistedNotification`) is published. A notification handler asynchronously upserts a denormalized order document to Azure Cosmos DB.
+
+- **SQL Server remains the source of truth** — Cosmos DB write failures are caught, logged, and do not fail the API request.
+- The Cosmos DB document includes precomputed `totalAmount` and `itemCount` for read-optimized queries.
+- The database and container (`OrderManagement` / `Orders`) are automatically created at startup via `CosmosDbInitializer`.
+- Partition key: `/id` (order ID as string).
+
 ## Testing
 
 Run all tests from the solution root:
@@ -214,12 +237,12 @@ Run all tests from the solution root:
 dotnet test
 ```
 
-The test suite includes 46 tests across three projects:
+The test suite includes 51 tests across three projects:
 
 | Project | Type | What's Tested |
 |---------|------|---------------|
-| **Orm.Application.Tests** | Unit (Moq) | `Mapper` entity/DTO mapping, CQRS command/query handlers, auth command handlers (Register, Login, RefreshToken) |
-| **Orm.Infrastructure.Tests** | Integration (EF InMemory) | `OrderRepository` CRUD operations, `RefreshTokenRepository` CRUD and revocation |
+| **Orm.Application.Tests** | Unit (Moq) | `Mapper` entity/DTO mapping, CQRS command/query handlers, auth command handlers (Register, Login, RefreshToken), `OrderPersistedCosmosHandler` notification handling and error isolation |
+| **Orm.Infrastructure.Tests** | Integration (EF InMemory) + Unit (Moq) | `OrderRepository` CRUD operations, `RefreshTokenRepository` CRUD and revocation, `CosmosOrderDocumentStore` document mapping and upsert |
 | **Orm.Api.Tests** | Unit (Moq) | `OrderController` and `AuthController` HTTP responses and status codes (mocking `IMediator`) |
 
 ## License
